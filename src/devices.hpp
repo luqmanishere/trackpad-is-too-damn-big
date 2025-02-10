@@ -8,16 +8,13 @@
 #include "libevdev/libevdev.h"
 #include <cerrno>
 #include <cstring>
-#include <errno.h>
 #include <exception>
 #include <fcntl.h>
 #include <format>
 #include <iostream>
-#include <string.h>
 #include <unistd.h>
 
-static void print_bits(struct libevdev *dev);
-static void print_props(struct libevdev *dev);
+extern "C" void print_evdev(struct libevdev *dev);
 
 class Evdev final {
   int m_fd = 0;
@@ -67,17 +64,7 @@ public:
     }
   }
 
-  void print() {
-    printf("Input device ID: bus %#x vendor %#x product %#x\n",
-           libevdev_get_id_bustype(m_dev), libevdev_get_id_vendor(m_dev),
-           libevdev_get_id_product(m_dev));
-    printf("Evdev version: %x\n", libevdev_get_driver_version(m_dev));
-    printf("Input device name: \"%s\"\n", libevdev_get_name(m_dev));
-    printf("Phys location: %s\n", libevdev_get_phys(m_dev));
-    printf("Uniq identifier: %s\n", libevdev_get_uniq(m_dev));
-    print_bits(m_dev);
-    print_props(m_dev);
-  }
+  void print() { print_evdev(m_dev); }
 
   template <typename EventHandler> auto runEventLoop(EventHandler handler) {
 
@@ -86,7 +73,7 @@ public:
 
     int rc = 0;
     do {
-      struct input_event ev;
+      input_event ev;
       rc = libevdev_next_event(
           m_dev, LIBEVDEV_READ_FLAG_NORMAL | LIBEVDEV_READ_FLAG_BLOCKING, &ev);
       if (rc == LIBEVDEV_READ_STATUS_SYNC) {
@@ -117,7 +104,7 @@ public:
 
 class UInput final {
   int m_fd = 0;
-  struct libevdev_uinput *m_uinput = NULL;
+  libevdev_uinput *m_uinput = NULL;
 
 public:
   UInput() = delete;
@@ -159,70 +146,3 @@ public:
     return rc;
   }
 };
-
-static void print_abs_bits(struct libevdev *dev, int axis) {
-  const struct input_absinfo *abs;
-
-  if (!libevdev_has_event_code(dev, EV_ABS, axis))
-    return;
-
-  abs = libevdev_get_abs_info(dev, axis);
-
-  printf("	Value	%6d\n", abs->value);
-  printf("	Min	%6d\n", abs->minimum);
-  printf("	Max	%6d\n", abs->maximum);
-  if (abs->fuzz)
-    printf("	Fuzz	%6d\n", abs->fuzz);
-  if (abs->flat)
-    printf("	Flat	%6d\n", abs->flat);
-  if (abs->resolution)
-    printf("	Resolution	%6d\n", abs->resolution);
-}
-
-static void print_code_bits(struct libevdev *dev, unsigned int type,
-                            unsigned int max) {
-  unsigned int i;
-  for (i = 0; i <= max; i++) {
-    if (!libevdev_has_event_code(dev, type, i))
-      continue;
-
-    printf("    Event code %i (%s)\n", i,
-           libevdev_event_code_get_name(type, i));
-    if (type == EV_ABS)
-      print_abs_bits(dev, i);
-  }
-}
-
-static void print_bits(struct libevdev *dev) {
-  unsigned int i;
-  printf("Supported events:\n");
-
-  for (i = 0; i <= EV_MAX; i++) {
-    if (libevdev_has_event_type(dev, i))
-      printf("  Event type %d (%s)\n", i, libevdev_event_type_get_name(i));
-    switch (i) {
-    case EV_KEY:
-      print_code_bits(dev, EV_KEY, KEY_MAX);
-      break;
-    case EV_REL:
-      print_code_bits(dev, EV_REL, REL_MAX);
-      break;
-    case EV_ABS:
-      print_code_bits(dev, EV_ABS, ABS_MAX);
-      break;
-    case EV_LED:
-      print_code_bits(dev, EV_LED, LED_MAX);
-      break;
-    }
-  }
-}
-
-static void print_props(struct libevdev *dev) {
-  unsigned int i;
-  printf("Properties:\n");
-
-  for (i = 0; i <= INPUT_PROP_MAX; i++) {
-    if (libevdev_has_property(dev, i))
-      printf("  Property type %d (%s)\n", i, libevdev_property_get_name(i));
-  }
-}

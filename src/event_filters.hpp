@@ -5,18 +5,14 @@
  *
  */
 #include <exception>
-#include <format>
-#include <iostream>
-#include <string>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "libevdev/libevdev.h"
 
 class PassAll {
 public:
-  constexpr void processEvents(std::vector<struct input_event> &) {}
+  constexpr void processEvents(std::vector<input_event> &) {}
 };
 
 class CropRect {
@@ -52,7 +48,7 @@ public:
       throw std::runtime_error("Device does not appear to be a Trackpad");
     }
 
-    const struct input_absinfo *ai;
+    const input_absinfo *ai;
 
     if ((ai = libevdev_get_abs_info(dev, ABS_MT_SLOT)) == NULL) {
       throw std::runtime_error("Failed to get slot info");
@@ -96,7 +92,7 @@ public:
   }
 
   constexpr void
-  processEvents(std::vector<struct input_event> &event_buffer) noexcept {
+  processEvents(std::vector<input_event> &event_buffer) noexcept {
     int slot = m_current_slot;
 
     for (const auto &ev : event_buffer) {
@@ -150,7 +146,7 @@ public:
     m_slot_valid.reserve(m_num_slot_max);
   }
 
-  void processEvents(std::vector<struct input_event> &event_buffer) noexcept {
+  void processEvents(std::vector<input_event> &event_buffer) noexcept {
     // we will save the last reported slot
     // before processing the events
     int slot = m_current_slot;
