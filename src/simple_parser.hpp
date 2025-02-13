@@ -20,14 +20,20 @@ public:
   template <typename T> std::string getTypeName(const std::optional<T> &) {
     if (std::is_same<T, int>::value)
       return "int";
-    if (std::is_same<T, unsigned int>::value)
-      return "unsigned int";
     if (std::is_same<T, long>::value)
       return "long";
-    if (std::is_same<T, double>::value)
-      return "double";
+    if (std::is_same<T, long long>::value)
+      return "long long";
+    if (std::is_same<T, short>::value)
+      return "short";
     if (std::is_same<T, float>::value)
       return "float";
+    if (std::is_same<T, double>::value)
+      return "double";
+    if (std::is_same<T, long double>::value)
+      return "long double";
+    if (std::is_same<T, char>::value)
+      return "char";
     if (std::is_same<T, std::string>::value)
       return "string";
     if (std::is_same<T, bool>::value)
@@ -40,15 +46,15 @@ public:
                  const std::string &description) {
 
     auto tn = getTypeName(arg);
-    std::cout << std::format("{} : ({}) {}.", prefix, tn, description);
+    std::cout << prefix + " : (" + tn + ") " + description;
     if (arg)
-      std::cout << "Default value : " << *arg;
+      std::cout << " - Default value : " << *arg;
     std::cout << std::endl;
   }
 
   template <typename ArgType>
   void read(ArgType &val, const std::string &prefix,
-            const std::string &description) {
+            const std::string &description = "") {
     std::optional<ArgType> opt(std::move(val));
     read(opt, prefix, description);
     val = std::move(*opt);
@@ -56,7 +62,7 @@ public:
 
   template <typename ArgType>
   void read(std::optional<ArgType> &val, const std::string &prefix,
-            const std::string &description) {
+            const std::string &description = "") {
 
     if (m_showHelp) {
       printHelp(val, prefix, description);
@@ -72,7 +78,7 @@ public:
         }
         i++;
         if (i == m_argc) {
-          auto s = std::format("No value supplied for argument {}", prefix);
+          auto s = "No value supplied for argument " + prefix;
           throw std::invalid_argument(s);
         }
 
@@ -83,8 +89,8 @@ public:
           val.emplace(std::move(result));
           return;
         } else {
-          auto s =
-              std::format("cannot read ({}) as {}", value, getTypeName(val));
+          auto s = "Cannot read (" + value + ") as " + getTypeName(val) +
+                   " for argument " + prefix;
           throw std::invalid_argument(s);
         }
       }

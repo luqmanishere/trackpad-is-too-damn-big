@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 
     {
       SimpleParser sp(argc, argv);
-      sp.read(sp.m_showHelp, "-h", "");
+      sp.read(sp.m_showHelp, "-h");
       if (sp.m_showHelp) {
         std::cout << "-h : Show this help message" << std::endl;
       }
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
       if (sp.m_showHelp) {
         std::cout << std::endl << "Example usage :" << std::endl;
-        std::cout << "\tsudo ./titdb -d /dev/input/event0 -m f" << std::endl;
+        std::cout << "\tsudo  asd titdb -d /dev/input/event0 -m f" << std::endl;
         return EXIT_SUCCESS;
       }
     }
@@ -61,9 +61,15 @@ int main(int argc, char **argv) {
       throw std::invalid_argument(s);
     }
 
+    auto running_mode = RunningMode::FromString(mode);
+    if (running_mode == RunningMode::Type::Invalid) {
+      auto s = std::format("Invalid running mode {}. Use -h for help", mode);
+      throw std::invalid_argument(s);
+    }
+
     auto evdev = Evdev(*device);
 
-    switch (RunningMode::FromString(mode)) {
+    switch (running_mode) {
     case RunningMode::Type::Print: {
       evdev.print();
       return evdev.runEventLoop(PrintEvents());
@@ -79,8 +85,7 @@ int main(int argc, char **argv) {
                     evdev.Spawn<CropRectFlex>(left, right, top, bottom)));
     }
     case RunningMode::Type::Invalid: {
-      auto s = std::format("Invalid running mode {}. Use -h for help", mode);
-      throw std::invalid_argument(s);
+      // unreachable
     }
     }
 

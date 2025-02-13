@@ -50,19 +50,22 @@ public:
 
     const input_absinfo *ai;
 
-    if ((ai = libevdev_get_abs_info(dev, ABS_MT_SLOT)) == NULL) {
+    ai = libevdev_get_abs_info(dev, ABS_MT_SLOT);
+    if (!ai) {
       throw std::runtime_error("Failed to get slot info");
     }
     m_num_slot_max = ai->maximum;
     m_slot_coordinates.reserve(m_num_slot_max);
 
-    if ((ai = libevdev_get_abs_info(dev, ABS_X)) == NULL) {
+    ai = libevdev_get_abs_info(dev, ABS_X);
+    if (!ai) {
       throw std::runtime_error("Failed to get abs x info");
     }
     m_dev_left = ai->minimum;
     m_dev_right = ai->maximum;
 
-    if ((ai = libevdev_get_abs_info(dev, ABS_Y)) == NULL) {
+    ai = libevdev_get_abs_info(dev, ABS_Y);
+    if (!ai) {
       throw std::runtime_error("Failed to get abs y info");
     }
     m_dev_top = ai->maximum;

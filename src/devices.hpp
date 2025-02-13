@@ -18,16 +18,15 @@ extern "C" void print_evdev(struct libevdev *dev);
 
 class Evdev final {
   int m_fd = 0;
-  struct libevdev *m_dev = NULL;
+  struct libevdev *m_dev = nullptr;
 
 public:
-  Evdev() = delete;
   Evdev(const Evdev &) = delete;
   Evdev &operator=(const Evdev &) = delete;
   Evdev &operator=(Evdev &&) = delete;
 
   Evdev(Evdev &&other) noexcept : m_fd(other.m_fd), m_dev(other.m_dev) {
-    other.m_dev = NULL;
+    other.m_dev = nullptr;
     other.m_fd = 0;
   }
 
@@ -104,17 +103,16 @@ public:
 
 class UInput final {
   int m_fd = 0;
-  libevdev_uinput *m_uinput = NULL;
+  libevdev_uinput *m_uinput = nullptr;
 
 public:
-  UInput() = delete;
   UInput(const UInput &) = delete;
   UInput &operator=(const UInput &) = delete;
   UInput &operator=(UInput &&) = delete;
 
   UInput(UInput &&other) noexcept : m_fd(other.m_fd), m_uinput(other.m_uinput) {
     other.m_fd = 0;
-    other.m_uinput = NULL;
+    other.m_uinput = nullptr;
   }
 
   UInput(libevdev const *const dev) {
