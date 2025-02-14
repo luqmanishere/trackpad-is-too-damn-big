@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
         return Type::Flex;
       return Type::Invalid;
     }
+    static std::string Usage() { return "Running mode options : p/s/f "; }
   };
 
   try {
@@ -37,35 +38,31 @@ int main(int argc, char **argv) {
 
     {
       SimpleParser sp(argc, argv);
-      sp.read(sp.m_showHelp, "-h");
-      if (sp.m_showHelp) {
-        std::cout << "-h : Show this help message" << std::endl;
-      }
 
+      sp.read(sp.m_showHelp, "-h");
       sp.read(device, "-d", "trackpad device filename (mandatory)");
-      sp.read(mode, "-m", "Running mode options : p/s/f ");
-      sp.read(left, "-l", "left percentage");
-      sp.read(right, "-r", "right percentage");
-      sp.read(top, "-t", "top percentage");
-      sp.read(bottom, "-b", "bottom percentage");
+      sp.read(mode, "-m", RunningMode::Usage());
+      sp.read(left, "-l", "left percentage", {0, 100});
+      sp.read(right, "-r", "right percentage", {0, 100});
+      sp.read(top, "-t", "top percentage", {0, 100});
+      sp.read(bottom, "-b", "bottom percentage", {0, 100});
 
       if (sp.m_showHelp) {
         std::cout << std::endl << "Example usage :" << std::endl;
-        std::cout << "\tsudo  asd titdb -d /dev/input/event0 -m f" << std::endl;
+        std::cout << "\t" << sp.programName() << " -d /dev/input/event0 -m f"
+                  << std::endl;
         return EXIT_SUCCESS;
       }
     }
 
-    if (!device) {
-      auto s = "device argument is mandatory. Use -h for help";
-      throw std::invalid_argument(s);
-    }
+    if (!device)
+      throw std::invalid_argument("device argument is mandatory");
 
     auto running_mode = RunningMode::FromString(mode);
-    if (running_mode == RunningMode::Type::Invalid) {
-      auto s = std::format("Invalid running mode {}. Use -h for help", mode);
-      throw std::invalid_argument(s);
-    }
+    if (running_mode == RunningMode::Type::Invalid)
+      throw std::invalid_argument("Invalid running mode: " + mode);
+
+    // All parameters are valid
 
     auto evdev = Evdev(*device);
 
@@ -89,6 +86,9 @@ int main(int argc, char **argv) {
     }
     }
 
+  } catch (const std::invalid_argument &e) {
+    std::cerr << "invalid argument: " << e.what() << std::endl;
+    std::cerr << "use -h for help" << std::endl;
   } catch (const std::exception &e) {
     std::cerr << "error: " << e.what() << std::endl;
   } catch (...) {

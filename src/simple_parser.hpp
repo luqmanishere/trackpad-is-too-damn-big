@@ -1,21 +1,25 @@
 /*
  *
- * This file is part of trackpad-is-too-damn-big utility
- * Copyright (c) https://github.com/tascvh/trackpad-is-too-damn-big
+ * This file is part of SimpleCmdParser
+ * Copyright (c) https://github.com/tascvh/SimpleCmdParser
  *
  */
+#include <iostream>
+#include <optional>
 #include <sstream>
 
 class SimpleParser {
 protected:
   int m_argc;
-  const char *const *const m_argv;
+  char **m_argv;
 
 public:
   bool m_showHelp;
-  SimpleParser() = delete;
-  SimpleParser(int argc, const char *const *const argv)
+  // SimpleParser() = delete;
+  SimpleParser(int argc, char **argv)
       : m_argc(argc), m_argv(argv), m_showHelp(false) {};
+
+  auto programName() { return std::string(m_argv[0]); }
 
   template <typename T> std::string getTypeName(const std::optional<T> &) {
     if (std::is_same<T, int>::value)
@@ -42,30 +46,46 @@ public:
   }
 
   template <typename ArgType>
-  void printHelp(std::optional<ArgType> arg, const std::string &prefix,
-                 const std::string &description) {
+  void
+  printHelp(std::optional<ArgType> arg, const std::string &prefix,
+            const std::string &description,
+            std::pair<std::optional<ArgType>, std::optional<ArgType>> minmax) {
 
+    auto &o1 = std::cout;
     auto tn = getTypeName(arg);
-    std::cout << prefix + " : (" + tn + ") " + description;
+    o1 << prefix + " : (" + tn + ") " + description;
     if (arg)
-      std::cout << " - Default value : " << *arg;
-    std::cout << std::endl;
+      o1 << "\n\tDefault value : " << *arg;
+
+    if (minmax.first) {
+      o1 << "\n\tmin value : " << minmax.first.value();
+    }
+
+    if (minmax.second) {
+      o1 << "\n\tmax value : " << minmax.second.value();
+    }
+
+    o1 << std::endl;
   }
 
   template <typename ArgType>
-  void read(ArgType &val, const std::string &prefix,
-            const std::string &description = "") {
+  void
+  read(ArgType &val, const std::string &prefix,
+       const std::string &description = "",
+       std::pair<std::optional<ArgType>, std::optional<ArgType>> minmax = {}) {
     std::optional<ArgType> opt(std::move(val));
-    read(opt, prefix, description);
+    read(opt, prefix, description, minmax);
     val = std::move(*opt);
   }
 
   template <typename ArgType>
-  void read(std::optional<ArgType> &val, const std::string &prefix,
-            const std::string &description = "") {
+  void
+  read(std::optional<ArgType> &val, const std::string &prefix,
+       const std::string &description = "",
+       std::pair<std::optional<ArgType>, std::optional<ArgType>> minmax = {}) {
 
     if (m_showHelp) {
-      printHelp(val, prefix, description);
+      printHelp(val, prefix, description, minmax);
       return;
     }
 
@@ -86,6 +106,18 @@ public:
         std::istringstream iss(value);
         ArgType result;
         if (iss >> result) {
+          if (minmax.first && result < minmax.first) {
+            std::ostringstream oss;
+            oss << "Argument " << prefix << " cannot be smaller than "
+                << minmax.first.value();
+            throw std::invalid_argument(oss.str());
+          }
+          if (minmax.second && result > minmax.second) {
+            std::ostringstream oss;
+            oss << "Argument " << prefix << " cannot be greater than "
+                << minmax.second.value();
+            throw std::invalid_argument(oss.str());
+          }
           val.emplace(std::move(result));
           return;
         } else {

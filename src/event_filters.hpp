@@ -39,7 +39,6 @@ protected:
   std::vector<Point> m_slot_coordinates;
 
 public:
-  CropRect() = delete;
   CropRect(libevdev const *const dev, int perc_left, int perc_right,
            int perc_top, int perc_bottom) {
     if (!libevdev_has_event_code(dev, EV_ABS, ABS_X) ||
